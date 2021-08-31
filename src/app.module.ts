@@ -11,11 +11,13 @@ import { UserRole } from './users/user-roles.model';
 import { Role } from './roles/roles.model';
 import { UserChannels } from './users/user-channels.model';
 import { Channel } from './channels/channels.model';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   controllers: [AppController],
   providers: [AppService],
   imports: [
+    AuthModule,
     UsersModule,
     ChannelsModule,
     RolesModule,
@@ -30,7 +32,6 @@ import { Channel } from './channels/channels.model';
       models: [User, Role, Channel, UserRole, UserChannels],
       autoLoadModels: true,
     }),
-    RolesModule,
   ],
 })
 export class AppModule {}
