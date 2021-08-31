@@ -1,5 +1,13 @@
-import { Column, DataType, Model, Table } from 'sequelize-typescript';
+import {
+  BelongsToMany,
+  Column,
+  DataType,
+  Model,
+  Table,
+} from 'sequelize-typescript';
 import { ApiProperty } from '@nestjs/swagger';
+import { User } from '../users/users.model';
+import { UserChannels } from 'src/users/user-channels.model';
 
 interface ChannelCreationAttrs {
   name: string;
@@ -27,4 +35,7 @@ export class Channel extends Model<Channel, ChannelCreationAttrs> {
   })
   @Column({ type: DataType.STRING })
   password: string;
+
+  @BelongsToMany(() => User, () => UserChannels)
+  owners: User[];
 }

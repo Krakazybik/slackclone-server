@@ -5,11 +5,11 @@ import {
   Model,
   Table,
 } from 'sequelize-typescript';
-import { Role } from '../roles/roles.model';
+import { Channel } from '../channels/channels.model';
 import { User } from './users.model';
 
-@Table({ tableName: 'user_roles', createdAt: false, updatedAt: false })
-export class UserRole extends Model<UserRole> {
+@Table({ tableName: 'user_channels', updatedAt: false, createdAt: false })
+export class UserChannels extends Model<UserChannels> {
   @Column({
     type: DataType.INTEGER,
     unique: true,
@@ -18,9 +18,9 @@ export class UserRole extends Model<UserRole> {
   })
   id: number;
 
-  @ForeignKey(() => Role)
+  @ForeignKey(() => Channel)
   @Column({ type: DataType.INTEGER, allowNull: false })
-  roleId: number;
+  channelId: number;
 
   @ForeignKey(() => User)
   @Column({ type: DataType.INTEGER, allowNull: false })
