@@ -6,6 +6,7 @@ import { ChannelsService } from './channels.service';
 import { UserChannels } from '../users/user-channels.model';
 import { User } from '../users/users.model';
 import { AuthModule } from '../auth/auth.module';
+import { ChannelGateway } from './gateways/сhannels.gateway';
 
 @Module({
   controllers: [ChannelsController],

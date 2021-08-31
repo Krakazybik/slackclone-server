@@ -12,11 +12,16 @@ import { Role } from './roles/roles.model';
 import { UserChannels } from './users/user-channels.model';
 import { Channel } from './channels/channels.model';
 import { AuthModule } from './auth/auth.module';
+import { SocketModule } from './channels/gateways/socket.module';
+import { MessagesModule } from './messages/messages.module';
+import { Message } from './messages/messages.model';
 
 @Module({
   controllers: [AppController],
   providers: [AppService],
   imports: [
+    MessagesModule,
+    SocketModule,
     AuthModule,
     UsersModule,
     ChannelsModule,
@@ -29,7 +34,7 @@ import { AuthModule } from './auth/auth.module';
       username: process.env.POSTGRES_USER,
       password: process.env.POSTGRES_PASSWORD,
       database: process.env.POSTGRES_DB,
-      models: [User, Role, Channel, UserRole, UserChannels],
+      models: [User, Role, Channel, UserRole, UserChannels, Message],
       autoLoadModels: true,
     }),
   ],
