@@ -5,10 +5,14 @@ import { ChannelsController } from './channels.controller';
 import { ChannelsService } from './channels.service';
 import { UserChannels } from '../users/user-channels.model';
 import { User } from '../users/users.model';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   controllers: [ChannelsController],
   providers: [ChannelsService],
-  imports: [SequelizeModule.forFeature([User, Channel, UserChannels])],
+  imports: [
+    AuthModule,
+    SequelizeModule.forFeature([User, Channel, UserChannels]),
+  ],
 })
 export class ChannelsModule {}
