@@ -15,6 +15,7 @@ import { AuthService } from '../../auth/auth.service';
 import { MessagesService } from '../../messages/messages.service';
 import { ChannelsService } from '../channels.service';
 import { SocketRenameChannelDto } from './dto/socket-rename-channel.dto';
+import { Channel } from '../channels.model';
 
 interface IAuthorizedClient {
   socketId: string;
@@ -84,6 +85,27 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     throw new WsException('User not found');
   }
 
+  @SubscribeMessage('joinChannel')
+  async handleJoinChannel(
+    @MessageBody('channelId') channelId: number,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const user = this.getUser(client);
+    const channel: Channel = await this.channelsService.getChannelById(
+      channelId,
+    );
+
+    if (channel && user) {
+      client.join(channel.name);
+      this.server.to(channel.name).emit('joinChannel', {
+        join: `Пользователь - ${user.userName} -  присоединился к каналу`,
+      });
+      return HttpStatus.OK;
+    }
+
+    throw new WsException('Channel not found');
+  }
+
   @SubscribeMessage('newMessage')
   async handleNewMessage(
     @MessageBody() { message, channelId },
@@ -97,6 +119,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         channelId,
         userId: user.userId,
       });
+      this.server.to('room').emit('newMessage', 'porno');
+
       return { name: user.userName, message };
     }
 
