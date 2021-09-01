@@ -6,12 +6,16 @@ import { RolesService } from '../roles/roles.service';
 import { AddRoleDto } from './dto/add-role.dto';
 import { BanUserDto } from './dto/ban-user.dto';
 import { Role } from 'src/roles/roles.model';
+import { AddUserChannelDto } from './dto/add-channel.dto';
+import { ChannelsService } from '../channels/channels.service';
+import { Channel } from 'src/channels/channels.model';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User) private userRepository: typeof User,
     private roleService: RolesService,
+    private channelsService: ChannelsService,
   ) {}
   async createUser(dto: CreateUserDto) {
     const user = await this.userRepository.create(dto);
@@ -29,6 +33,20 @@ export class UsersService {
       return dto;
     }
     throw new HttpException('User or Role not found', HttpStatus.NOT_FOUND);
+  }
+
+  async addUserChannel(dto: AddUserChannelDto) {
+    const user: User = await this.userRepository.findByPk(dto.userId);
+    const channel: Channel = await this.channelsService.getChannelById(
+      dto.userId,
+    );
+
+    if (user && channel) {
+      await user.$add('channels', channel.id);
+      return dto;
+    }
+
+    throw new HttpException('User or Channel not found', HttpStatus.NOT_FOUND);
   }
 
   async banUser(dto: BanUserDto) {

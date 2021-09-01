@@ -1,13 +1,12 @@
 import { Module } from '@nestjs/common';
-import { ChannelGateway } from './сhannels.gateway';
+import { ChatGateway } from './chat.gateway';
 import { MessagesModule } from '../../messages/messages.module';
-import { MessagesService } from '../../messages/messages.service';
-import { JwtModule, JwtService } from '@nestjs/jwt';
 import { AuthModule } from '../../auth/auth.module';
+import { ChannelsModule } from '../channels.module';
 
 @Module({
-  providers: [ChannelGateway],
-  imports: [MessagesModule, AuthModule],
+  providers: [ChatGateway],
+  imports: [MessagesModule, AuthModule, ChannelsModule],
   exports: [],
 })
 export class SocketModule {}

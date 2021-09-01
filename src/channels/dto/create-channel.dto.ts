@@ -9,4 +9,6 @@ export class CreateChannelDto {
   @IsString({ message: 'Password  should be a string type' })
   @ApiProperty({ example: 'qwerty123', description: 'Channel password' })
   password?: string;
+
+  ownerId: number;
 }

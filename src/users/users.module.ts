@@ -8,12 +8,14 @@ import { Role } from 'src/roles/roles.model';
 import { UserChannels } from './user-channels.model';
 import { RolesModule } from '../roles/roles.module';
 import { AuthModule } from '../auth/auth.module';
+import { ChannelsModule } from '../channels/channels.module';
 
 @Module({
   controllers: [UsersController],
   providers: [UsersService],
   imports: [
     forwardRef(() => AuthModule),
+    forwardRef(() => ChannelsModule),
     RolesModule,
     SequelizeModule.forFeature([User, Role, UserRole, UserChannels]),
   ],

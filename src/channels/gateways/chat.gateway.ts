@@ -3,44 +3,34 @@ import {
   MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
-  OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
+  WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { NewMessageDto } from '../../messages/dto/new-message.dto';
-import {
-  HttpStatus,
-  Logger,
-  UnauthorizedException,
-  UseGuards,
-  UsePipes,
-} from '@nestjs/common';
-import { SocketValidationPipe } from '../../pipes/socket-validation.pipe';
-import { SocketAuthGuard } from 'src/guards/socket-auth.guard';
+import { HttpStatus, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from '../../auth/auth.service';
-import { Message } from '../../messages/messages.model';
 import { MessagesService } from '../../messages/messages.service';
+import { ChannelsService } from '../channels.service';
+import { SocketRenameChannelDto } from './dto/socket-rename-channel.dto';
 
 interface IAuthorizedClient {
   socketId: string;
   userId: number;
   userName: string;
 }
-
 @WebSocketGateway({
   cors: { origin: '*' },
   cookie: 'sid',
 })
-export class ChannelGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
-{
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private jwtService: JwtService,
     private authService: AuthService,
     private messagesService: MessagesService,
+    private channelsService: ChannelsService,
   ) {}
 
   private authorizedClients: Array<IAuthorizedClient> = [];
@@ -49,7 +39,7 @@ export class ChannelGateway
 
   private logger: Logger = new Logger('ChatGateway');
 
-  async handleConnection(client: Socket, ...args: any[]) {
+  async handleConnection(client: Socket) {
     const authHeader = client.handshake.headers.authorization;
 
     const bearer = authHeader.split(' ')[0];
@@ -79,15 +69,27 @@ export class ChannelGateway
     );
   }
 
-  @SubscribeMessage('createChannel')
-  handleCreateChannel(@MessageBody() data: string) {}
+  @SubscribeMessage('newChannel')
+  async handleCreateChannel(
+    @MessageBody('name') name: string,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const user: IAuthorizedClient = this.getUser(client);
+    if (user) {
+      return await this.channelsService.createChannel({
+        name,
+        ownerId: user.userId,
+      });
+    }
+    throw new WsException('User not found');
+  }
 
   @SubscribeMessage('newMessage')
   async handleNewMessage(
     @MessageBody() { message, channelId },
     @ConnectedSocket() client: Socket,
   ) {
-    const user = this.getUser(client);
+    const user: IAuthorizedClient = this.getUser(client);
 
     if (user) {
       await this.messagesService.addNewMessage({
@@ -98,19 +100,41 @@ export class ChannelGateway
       return { name: user.userName, message };
     }
 
-    return new UnauthorizedException('User not found');
+    throw new WsException('User not found');
   }
 
-  @SubscribeMessage('newChannel')
-  handleNewChannel(@MessageBody() data: string) {}
-
   @SubscribeMessage('renameChannel')
-  handleRenameChannel(@MessageBody() data: string) {}
+  async handleRenameChannel(
+    @MessageBody() { channelId, name }: SocketRenameChannelDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const user: IAuthorizedClient = this.getUser(client);
+    if (user) {
+      return await this.channelsService.renameChannel({
+        userId: user.userId,
+        channelId,
+        name,
+      });
+    }
+
+    throw new WsException('User not found');
+  }
 
   @SubscribeMessage('removeChannel')
-  handleRemoveChannel(@MessageBody() data: string) {}
+  async handleRemoveChannel(
+    @MessageBody() { channelId }: SocketRenameChannelDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const user = this.getUser(client);
+    if (user) {
+      return await this.channelsService.removeChannel({
+        channelId,
+        userId: user.userId,
+      });
+    }
+  }
 
-  private getUser(client: Socket) {
+  private getUser(client: Socket): IAuthorizedClient {
     return this.authorizedClients?.find(
       (authClient) => authClient.socketId === client.id,
     );
