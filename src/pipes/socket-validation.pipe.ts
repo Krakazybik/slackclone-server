@@ -8,7 +8,7 @@ export class SocketValidationPipe implements PipeTransform<any> {
   async transform(value: any, metadata: ArgumentMetadata): Promise<any> {
     const obj = plainToClass(metadata.metatype, value);
     const errors = await validate(obj);
-    if (errors.length) {
+    if (errors && errors.length > 0) {
       const messages = errors.map(
         (error) =>
           `${error.property} - ${Object.values(error.constraints).join(',')}`,

@@ -48,9 +48,14 @@ export class AuthService {
     };
   }
 
-  private async validateUser(dto: CreateUserDto) {
+  async isBanned(id: number) {
+    const user: User = await this.userService.getUserById(id);
+    if (user) return user.banned;
+  }
+
+  async validateUser(dto: CreateUserDto) {
     const user = await this.userService.getUserByEmail(dto.email);
-    if (user) {
+    if (user && !user.banned) {
       const passwordEquals = await bcrypt.compare(dto.password, user.password);
       if (passwordEquals) return user;
     }

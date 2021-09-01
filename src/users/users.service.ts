@@ -52,4 +52,10 @@ export class UsersService {
       include: { all: true },
     });
   }
+
+  async getUserById(id: number) {
+    const user = await this.userRepository.findByPk(id);
+    if (user) return user;
+    throw new HttpException('User Not found', HttpStatus.NOT_FOUND);
+  }
 }
