@@ -77,15 +77,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody('channelId') channelId: number,
     @ConnectedSocket() client: Socket,
   ) {
-    const user = this.getUser(client);
+    const authorizedUser = this.getUser(client);
     const channel: Channel = await this.channelsService.getChannelById(
       channelId,
     );
 
-    if (channel && user) {
+    if (channel && authorizedUser) {
+      const user: User = await this.usersService.getUserById(
+        authorizedUser.userId,
+      );
+      user.currentChannel = channel.id;
+      await user.save();
+
       client.join(channel.name);
       this.server.to(channel.name).emit('joinChannel', {
-        join: `Пользователь - ${user.userName} -  присоединился к каналу`,
+        join: `Пользователь - ${authorizedUser.userName} -  присоединился к каналу`,
       });
       return HttpStatus.OK;
     }
@@ -103,6 +109,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const user: User = await this.usersService.getUserById(
         authorizedUser.userId,
       );
+      console.log(user.currentChannel);
       const channel: Channel = await this.channelsService.getChannelById(
         user.currentChannel,
       );
@@ -111,6 +118,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         message,
         channelId: channel.id,
         userId: user.id,
+        userName: user.email,
       });
 
       const msg = { userId: user.id, name: user.email, message };

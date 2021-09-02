@@ -19,6 +19,9 @@ export class Message extends Model<Message, MessageCreationAttrs> {
   @Column({ type: DataType.INTEGER, allowNull: false })
   userId: number;
 
+  @Column({ type: DataType.STRING, allowNull: false })
+  userName: string;
+
   @Column({ type: DataType.INTEGER, allowNull: false })
   channelId: number;
 
