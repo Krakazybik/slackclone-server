@@ -41,6 +41,10 @@ export class User extends Model<User, UserCreationAttrs> {
   @Column({ type: DataType.STRING })
   banReason: string;
 
+  @ApiProperty({ example: '2', description: 'User selected channel id' })
+  @Column({ type: DataType.INTEGER, allowNull: false, defaultValue: 1 })
+  currentChannel: number;
+
   @BelongsToMany(() => Role, () => UserRole)
   roles: Role[];
 }

@@ -16,6 +16,8 @@ import { MessagesService } from '../../messages/messages.service';
 import { ChannelsService } from '../channels.service';
 import { SocketRenameChannelDto } from './dto/socket-rename-channel.dto';
 import { Channel } from '../channels.model';
+import { UsersService } from '../../users/users.service';
+import { User } from 'src/users/users.model';
 
 interface IAuthorizedClient {
   socketId: string;
@@ -24,7 +26,6 @@ interface IAuthorizedClient {
 }
 @WebSocketGateway({
   cors: { origin: '*' },
-  cookie: 'sid',
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
@@ -32,6 +33,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private authService: AuthService,
     private messagesService: MessagesService,
     private channelsService: ChannelsService,
+    private usersService: UsersService,
   ) {}
 
   private authorizedClients: Array<IAuthorizedClient> = [];
@@ -70,21 +72,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     );
   }
 
-  @SubscribeMessage('newChannel')
-  async handleCreateChannel(
-    @MessageBody('name') name: string,
-    @ConnectedSocket() client: Socket,
-  ) {
-    const user: IAuthorizedClient = this.getUser(client);
-    if (user) {
-      return await this.channelsService.createChannel({
-        name,
-        ownerId: user.userId,
-      });
-    }
-    throw new WsException('User not found');
-  }
-
   @SubscribeMessage('joinChannel')
   async handleJoinChannel(
     @MessageBody('channelId') channelId: number,
@@ -108,22 +95,43 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('newMessage')
   async handleNewMessage(
-    @MessageBody() { message, channelId },
+    @MessageBody() { message },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const authorizedUser: IAuthorizedClient = this.getUser(client);
+    if (authorizedUser) {
+      const user: User = await this.usersService.getUserById(
+        authorizedUser.userId,
+      );
+      const channel: Channel = await this.channelsService.getChannelById(
+        user.currentChannel,
+      );
+
+      await this.messagesService.addNewMessage({
+        message,
+        channelId: channel.id,
+        userId: user.id,
+      });
+
+      const msg = { userId: user.id, name: user.email, message };
+
+      this.server.to(channel.name).emit('newMessage', msg);
+    } else throw new WsException('User not found');
+  }
+
+  @SubscribeMessage('newChannel')
+  async handleCreateChannel(
+    @MessageBody('name') name: string,
     @ConnectedSocket() client: Socket,
   ) {
     const user: IAuthorizedClient = this.getUser(client);
-
     if (user) {
-      await this.messagesService.addNewMessage({
-        message,
-        channelId,
-        userId: user.userId,
+      const channel = await this.channelsService.createChannel({
+        name,
+        ownerId: user.userId,
       });
-      this.server.to('room').emit('newMessage', 'porno');
-
-      return { name: user.userName, message };
+      this.server.emit('newChannel', channel);
     }
-
     throw new WsException('User not found');
   }
 
@@ -134,11 +142,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const user: IAuthorizedClient = this.getUser(client);
     if (user) {
-      return await this.channelsService.renameChannel({
+      const channel = await this.channelsService.renameChannel({
         userId: user.userId,
         channelId,
         name,
       });
+      this.server.emit('renameChannel', channel);
     }
 
     throw new WsException('User not found');

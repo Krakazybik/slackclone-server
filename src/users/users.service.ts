@@ -9,6 +9,7 @@ import { Role } from 'src/roles/roles.model';
 import { AddUserChannelDto } from './dto/add-channel.dto';
 import { ChannelsService } from '../channels/channels.service';
 import { Channel } from 'src/channels/channels.model';
+import { UpdateCurrentUserChannelDto } from './dto/update-current-user-channel.dto';
 
 @Injectable()
 export class UsersService {
@@ -60,6 +61,15 @@ export class UsersService {
     throw new HttpException('User not found', HttpStatus.NOT_FOUND);
   }
 
+  async updateCurrentUserChannel(dto: UpdateCurrentUserChannelDto) {
+    const user: User = await this.userRepository.findByPk(dto.userId);
+    if (user) {
+      user.currentChannel = dto.channelId;
+      return await user.save();
+    }
+    throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+  }
+
   async getAllUsers() {
     return await this.userRepository.findAll();
   }
@@ -74,6 +84,9 @@ export class UsersService {
   async getUserById(id: number) {
     const user = await this.userRepository.findByPk(id);
     if (user) return user;
-    throw new HttpException('User Not found', HttpStatus.NOT_FOUND);
+    throw new HttpException(
+      `User with id: ${id} Not found`,
+      HttpStatus.NOT_FOUND,
+    );
   }
 }

@@ -14,7 +14,7 @@ interface ChannelCreationAttrs {
   password?: string;
 }
 
-@Table({ tableName: 'channels' })
+@Table({ tableName: 'channels', createdAt: false, updatedAt: false })
 export class Channel extends Model<Channel, ChannelCreationAttrs> {
   @ApiProperty({ example: '1', description: 'Channel unique identificator' })
   @Column({
@@ -35,6 +35,9 @@ export class Channel extends Model<Channel, ChannelCreationAttrs> {
   })
   @Column({ type: DataType.STRING })
   password: string;
+
+  @Column({ type: DataType.BOOLEAN, allowNull: false, defaultValue: false })
+  removable: boolean;
 
   @BelongsToMany(() => User, () => UserChannels)
   owners: User[];

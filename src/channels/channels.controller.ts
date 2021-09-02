@@ -15,7 +15,8 @@ export class ChannelsController {
   @ApiResponse({ status: 200, type: [Channel] })
   @Get()
   async getAllChannels() {
-    return this.channelService.getAllChannels();
+    const channels = await this.channelService.getAllChannels();
+    return { channels };
   }
 
   @ApiOperation({ summary: 'Create new channel' })
