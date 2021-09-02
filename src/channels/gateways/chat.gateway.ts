@@ -121,7 +121,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         userName: user.email,
       });
 
-      const msg = { userId: user.id, name: user.email, message };
+      const msg = { userId: user.id, userName: user.email, message };
 
       this.server.to(channel.name).emit('newMessage', msg);
     } else throw new WsException('User not found');
